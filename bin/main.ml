@@ -3,11 +3,11 @@ module Interpreter = struct
 
   type expr =
     | Var of string
-    | Abs of (string * expr)
-    | App of (expr * expr)
+    | Abs of string * expr
+    | App of expr * expr
 
   type value =
-    | Closure of (string * expr * value Context.t)
+    | Closure of string * expr * value Context.t
 
   let rec eval context expr =
     let apply context l_expr r_expr =
@@ -23,11 +23,8 @@ module Interpreter = struct
       | false -> failwith ("unbound variable: " ^ name))
     | Abs (param, body) -> Closure (param, body, context)
     | App (l_expr, r_expr) -> apply context l_expr r_expr
-        
-  (** (\x.x x) (\x.x x) **)
-  let u_comb = Abs ("x", App((Var "x"), (Var "x")))
-  let ast = App(u_comb, u_comb)
 
+  let ast = App(Abs("x", Var "x"), Abs("y", Var "y"))
   let _result = eval Context.empty ast
 end
 
@@ -74,5 +71,19 @@ module Lexer = struct
       | Identifier id -> print_endline id) tokens
 end
 
+module Parser = struct
+  
+  let rec parse tokens =
+    match tokens with
+    | LParen::seq ->
+        let (expr, rem) = parse rest in
+        assert false
+        
 
+end
+
+let input = {|(\x.x) (\y.y)|}
+let tokens = Lexer.lex input
+
+let () = Lexer.debug tokens
 

@@ -2,3 +2,4 @@
  (public_name lambda_calculus)
  (name main)
  (libraries lambda_calculus))
+;
