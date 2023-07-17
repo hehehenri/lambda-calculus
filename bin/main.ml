@@ -24,8 +24,11 @@ module Interpreter = struct
     | Abs (param, body) -> Closure (param, body, context)
     | App (l_expr, r_expr) -> apply context l_expr r_expr
 
-  let ast = App(Abs("x", Var "x"), Abs("y", Var "y"))
-  let _result = eval Context.empty ast
+  let rec to_string expr =
+    match expr with
+    | Var name -> Printf.sprintf "Var %s" name
+    | Abs (arg, body) -> Printf.sprintf "Abs(%s, %s)" arg (to_string body)
+    | App (l_expr, r_expr) -> Printf.sprintf "App(%s, %s)" (to_string l_expr) (to_string r_expr)
 end
 
 module Lexer = struct
@@ -62,13 +65,21 @@ module Lexer = struct
     let chars = List.of_seq (String.to_seq input) in
     lex chars
 
-  let debug tokens =
-    List.iter (fun token -> match token with
-      | LParen -> print_endline "LParen"
-      | RParen -> print_endline "RParen"
-      | Lambda -> print_endline "Lambda"
-      | Dot -> print_endline "Dot"
-      | Identifier id -> print_endline ("Identifier " ^ id)) tokens
+  let to_string token =
+    match token with
+      | LParen -> "LParen"
+      | RParen -> "RParen"
+      | Lambda -> "Lambda"
+      | Dot -> "Dot"
+      | Identifier id -> Printf.sprintf "Identifier (%s)" id
+
+  let to_string tokens =
+    List.map(fun token -> to_string token) tokens
+    |> String.concat " "
+
+  (* let debug tokens = *)
+  (*   List.iter (fun token -> print_string ((to_string token) ^ " ")) tokens; *)
+  (*   print_endline "" *)
 end
 
 module Parser = struct
@@ -76,32 +87,31 @@ module Parser = struct
   open Interpreter
 
   let rec parse_expr tokens = 
-    let parse_var tokens =
-      (match tokens with
-      | Identifier name::rem -> Var name, rem
-      | _ -> failwith "failed to parse: identifier expected") in
-
     let parse_abs tokens =
       (match tokens with
       | Lambda::Identifier id::Dot::rest ->
           let (body, rem_tokens) = parse_expr rest in
           Abs (id, body), rem_tokens
       | _ -> failwith "failed to parse: abstraction expected") in
+
     let rec parse_app l_expr tokens =
-      (match tokens with
+      match tokens with
+      | [] as empty ->  (l_expr, empty)
       | RParen::rest -> (l_expr, rest)
       | tokens ->
           let r_expr, rem = parse_expr tokens in
-          parse_app (App (l_expr, r_expr)) rem) in
+          parse_app (App (l_expr, r_expr)) rem
+    in
 
     match tokens with
     | LParen::rem ->
         let l_expr, rem = parse_expr rem in
-        let expr, rem = parse_app l_expr rem in
-        expr, rem
+        (match rem with
+        | RParen :: rem -> parse_app l_expr rem
+        | _ -> failwith "failed to parse: expecting closing parenthesis")
     | Lambda::_ -> parse_abs tokens
-    | Identifier _::_ -> parse_var tokens
-    | _ -> failwith "failed to parse: unexpected token"
+    | Identifier name::rem -> Var name, rem
+    | tokens -> failwith (Printf.sprintf "failed to parse: unexpected token(%s)" (Lexer.to_string tokens))
     
   let parse tokens =
     match parse_expr tokens with
@@ -109,8 +119,8 @@ module Parser = struct
     | _expr, _tokens -> failwith "failed to parse: extra tokens"
 end
 
-let input = {|(\x.x) (\z.z)|}
+let input = {|(\x. x)(\z. z)|}
 let tokens = Lexer.lex input
-
-let () = Lexer.debug tokens
-
+let ast = Parser.parse tokens
+let () = print_endline (Interpreter.to_string ast)
+let _ = Interpreter.(eval Context.empty ast)
