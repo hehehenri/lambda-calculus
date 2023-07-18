@@ -5,22 +5,13 @@
 (generate_opam_files true)
 
 (source
- (github username/reponame))
+ (github henri1i/lambda-calculus))
 
-(authors "Author Name")
-
-(maintainers "Maintainer Name")
+(authors "henri1i")
 
 (license LICENSE)
 
-(documentation https://url/to/documentation)
-
 (package
  (name lambda_calculus)
- (synopsis "A short synopsis")
- (description "A longer description")
- (depends ocaml dune)
- (tags
-  (topics "to describe" your project)))
-
-; See the complete stanza docs at https://dune.readthedocs.io/en/stable/dune-files.html#dune-project
+ (synopsis "A very simple lambda calculus implementation")
+ (depends ocaml dune))
