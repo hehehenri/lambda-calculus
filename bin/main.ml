@@ -1,7 +1,28 @@
 open Lambda_calculus
+open Lambda_calculus.Lexer
 
-let input = {|((\x. x)(\z. z))|}
-let tokens = Lexer.lex input
-let ast = Parser.parse tokens
-let () = print_endline (Ast.to_string ast)
-let _ = Ast.(eval Context.empty ast)
+(** (\a. a)() **)
+
+let tokens = [
+  LParen; 
+  Lambda; 
+  Identifier("x"); 
+  Dot; 
+  Identifier("x"); 
+  RParen;
+  LParen; 
+  Lambda; 
+  Identifier("x"); 
+  Dot; 
+  Identifier("x");
+  RParen;
+]
+
+let _ast = Parser.parse tokens
+
+let expected_ast = Ast.(App(
+    Abs("x", App(Var("x"), Var("x"))),
+    Abs("x", App(Var("x"), Var("x")))
+  ))
+
+let _result = Ast.eval Ast.Context.empty expected_ast
